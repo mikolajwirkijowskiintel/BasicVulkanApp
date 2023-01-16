@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
+#include <iostream>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 640;
@@ -16,6 +18,10 @@ public:
 private:
     void initVulkan();
 
+    void createInstance();
+
+    bool checkGLFWRequirements(const char** glfwExtensions, uint32_t glfwExtensionsCount, std::vector<VkExtensionProperties> availableExtensions);
+
     void mainLoop();
 
     void cleanup();
@@ -26,4 +32,5 @@ private:
     /// The window that displays our output
     /// </summary>
     GLFWwindow* window;
+    VkInstance instance;
 };
