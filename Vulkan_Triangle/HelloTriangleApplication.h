@@ -41,11 +41,6 @@ private:
 
     void mainLoop();
 
-    /// <summary>
-    /// Sets up the basic(NOT ALL!) properties of VkInstance createInfo
-    /// </summary>
-    /// <param name="createInfo"></param>
-    void setupCreateInfo(VkInstanceCreateInfo& createInfo);
 
     void setupAppInfo(VkApplicationInfo& appInfo);
 

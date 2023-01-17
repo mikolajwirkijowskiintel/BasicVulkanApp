@@ -33,6 +33,7 @@ VkResult HelloTriangleApplication::CreateDebugUtilsMessengerEXT(VkInstance insta
 void HelloTriangleApplication::initVulkan()
 {
     createInstance();
+    setupDebugMessenger();
 
 }
 
@@ -45,9 +46,23 @@ void HelloTriangleApplication::createInstance()
     setupAppInfo(appInfo);
 
     VkInstanceCreateInfo createInfo{};
-    setupCreateInfo(createInfo);
-    createInfo.pApplicationInfo = &appInfo;
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    if (enableValidationLayers) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+        populateDebugMessengerCreateInfo(debugCreateInfo);
+        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+    }
+    else {
+        createInfo.enabledLayerCount = 0;
+        createInfo.pNext = nullptr;
+    }
+    createInfo.pApplicationInfo = &appInfo;
+    auto req_extensions = getRequiredExtensions();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(req_extensions.size());
+    createInfo.ppEnabledExtensionNames = req_extensions.data();
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance); 
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
@@ -110,26 +125,7 @@ void HelloTriangleApplication::mainLoop()
     }
 }
 
-void HelloTriangleApplication::setupCreateInfo(VkInstanceCreateInfo& createInfo)
-{
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-        populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-    }
-    else {
-        createInfo.enabledLayerCount = 0;
-        createInfo.pNext = nullptr;
-    }
-
-    auto req_extensions = getRequiredExtensions();
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(req_extensions.size());
-    createInfo.ppEnabledExtensionNames = req_extensions.data();
-}
 
 void HelloTriangleApplication::setupAppInfo(VkApplicationInfo& appInfo)
 {
@@ -144,7 +140,7 @@ void HelloTriangleApplication::setupAppInfo(VkApplicationInfo& appInfo)
 void HelloTriangleApplication::cleanup()
 {
     if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+       // DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     }
     vkDestroyInstance(instance, nullptr);
     glfwDestroyWindow(window);
