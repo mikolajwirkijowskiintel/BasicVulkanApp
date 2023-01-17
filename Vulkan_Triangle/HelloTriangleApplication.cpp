@@ -3,7 +3,6 @@
 
 void HelloTriangleApplication::run()
 {
-    
     initWindow();
     initVulkan();
     mainLoop();
@@ -49,10 +48,7 @@ void HelloTriangleApplication::createInstance()
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-    std::cout << "Requirements met: " << checkGLFWRequirements(glfwExtensions, glfwExtensionCount, extensions);
-
-    
-    
+    std::cout << "Requirements met: " <<  (checkGLFWRequirements(glfwExtensions, glfwExtensionCount, extensions)) ? "True" : "False";
 }
 
 bool HelloTriangleApplication::checkGLFWRequirements(const char** glfwExtensions,uint32_t glfwExtensionsCount, std::vector<VkExtensionProperties> availableExtensions)
@@ -60,9 +56,7 @@ bool HelloTriangleApplication::checkGLFWRequirements(const char** glfwExtensions
     for (int i = 0; i < glfwExtensionsCount; i++) {
         bool matched = false;
         for (const auto& extension : availableExtensions) {
-            
-            if (glfwExtensions[i] == extension.extensionName) {
-                std::cout << glfwExtensions[i] << "," << extension.extensionName << "\n";
+            if (std::strcmp(glfwExtensions[i], extension.extensionName)) {
                 matched = true;
             }
         }
@@ -81,6 +75,7 @@ void HelloTriangleApplication::mainLoop()
 
 void HelloTriangleApplication::cleanup()
 {
+    vkDestroyInstance(instance, nullptr);
     glfwDestroyWindow(window);
     glfwTerminate();
 }
