@@ -18,11 +18,17 @@ const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
+ 
+   
 
 class HelloTriangleApplication {
 public:
 
     void run();
+
+    static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+
+    static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 
 private:
     void initVulkan();
@@ -35,6 +41,14 @@ private:
 
     void mainLoop();
 
+    /// <summary>
+    /// Sets up the basic(NOT ALL!) properties of VkInstance createInfo
+    /// </summary>
+    /// <param name="createInfo"></param>
+    void setupCreateInfo(VkInstanceCreateInfo& createInfo);
+
+    void setupAppInfo(VkApplicationInfo& appInfo);
+
     void cleanup();
 
     void initWindow();
@@ -42,6 +56,8 @@ private:
     bool checkValidationLayerSupport();
 
     void setupDebugMessenger();
+
+    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
