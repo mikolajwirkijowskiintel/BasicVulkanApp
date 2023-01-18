@@ -1,11 +1,9 @@
 #pragma once
+#include <vector>
+#include <optional>
+#include <functional>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
-#include <stdexcept>
-#include <cstdlib>
-#include <vector>
-#include <iostream>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 640;
@@ -19,12 +17,19 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
  
-   
+struct QueueFamilyIndices {
+	std::optional<uint32_t> graphicsFamily;
+	bool isComplete() {
+		return graphicsFamily.has_value();
+	}
+};
 
 class HelloTriangleApplication {
 public:
 
     void run();
+
+   
 
     static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
@@ -41,6 +46,7 @@ private:
 
     void mainLoop();
 
+    void pickPhysicalDevice();
 
     void setupAppInfo(VkApplicationInfo& appInfo);
 
@@ -50,9 +56,16 @@ private:
 
     bool checkValidationLayerSupport();
 
+    template <class Info, class Value, class FReturnType>
+    std::vector<Value> getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*));
+
     void setupDebugMessenger();
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+    bool isDeviceSuitable(VkPhysicalDevice device);
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -67,3 +80,13 @@ private:
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
 };
+
+template <class Info, class Value, class FReturnType>
+std::vector<Value> HelloTriangleApplication::getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*))
+{
+    uint32_t count = 0;
+    func(info, &count, nullptr);
+    std::vector<Value> resultVector(count);
+    func(info, &count, resultVector.data());
+    return resultVector;
+}
