@@ -17,8 +17,13 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
  
+
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
+	/// <summary>
+	/// Checks if all members of the struct are initialized
+	/// </summary>
+	/// <returns></returns>
 	bool isComplete() {
 		return graphicsFamily.has_value();
 	}
@@ -31,12 +36,29 @@ public:
 
    
 
-    static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-
-    static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-
 private:
+    /// static functions
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData);
+
+	static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+
+	static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+
     void initVulkan();
+
+    void initWindow();
+
+    void createLogicalDevice();
+
+    void cleanup();
+
+    void pickPhysicalDevice();
+
+    void mainLoop();
 
     void createInstance();
 
@@ -44,20 +66,12 @@ private:
 
     std::vector<const char*> getRequiredExtensions();
 
-    void mainLoop();
-
-    void pickPhysicalDevice();
-
-    void setupAppInfo(VkApplicationInfo& appInfo);
-
-    void cleanup();
-
-    void initWindow();
-
     bool checkValidationLayerSupport();
 
     template <class Info, class Value, class FReturnType>
     std::vector<Value> getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*));
+
+    void setupAppInfo(VkApplicationInfo& appInfo);
 
     void setupDebugMessenger();
 
@@ -67,18 +81,14 @@ private:
 
     bool isDeviceSuitable(VkPhysicalDevice device);
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData);
+   
 
-    /// <summary>
-    /// The window that displays our output
-    /// </summary>
     GLFWwindow* window;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
+    VkPhysicalDevice physicalDevice;
+    VkDevice device;
+    VkQueue graphicsQueue;
 };
 
 template <class Info, class Value, class FReturnType>

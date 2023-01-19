@@ -1,4 +1,4 @@
-#include "HelloTriangleApplication.h"
+#include "HelloTriangleApplication.hpp"
 
 #include <stdexcept>
 #include <cstdlib>
@@ -46,6 +46,7 @@ void HelloTriangleApplication::initVulkan()
     createInstance();
     setupDebugMessenger();
     pickPhysicalDevice();
+    createLogicalDevice();
 
 }
 
@@ -169,6 +170,7 @@ void HelloTriangleApplication::cleanup()
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     }
     vkDestroyInstance(instance, nullptr);
+    vkDestroyDevice(device,nullptr);
     glfwDestroyWindow(window);
     glfwTerminate();
 }
@@ -181,6 +183,41 @@ void HelloTriangleApplication::initWindow()
     
     window = glfwCreateWindow(WIDTH, HEIGHT, "AMAZING TRIANGLE", nullptr, nullptr);
 
+}
+
+void HelloTriangleApplication::createLogicalDevice()
+{
+	QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+    float queuePriorities[1] = { 1.0f };
+    queueCreateInfo.pQueuePriorities = queuePriorities;
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+
+	createInfo.pEnabledFeatures = &deviceFeatures;
+
+	createInfo.enabledExtensionCount = 0;
+
+	if (enableValidationLayers) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else {
+		createInfo.enabledLayerCount = 0;
+	}
+	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create logical device!");
+	}
+    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 }
 
 bool HelloTriangleApplication::checkValidationLayerSupport()
@@ -246,6 +283,7 @@ QueueFamilyIndices HelloTriangleApplication::findQueueFamilies(VkPhysicalDevice 
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			indices.graphicsFamily = i;
 		}
+        if (indices.isComplete()) break;
 		i++;
 	}
 	return indices;

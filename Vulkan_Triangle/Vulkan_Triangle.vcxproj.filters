@@ -23,7 +23,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HelloTriangleApplication.h">
+    <ClInclude Include="HelloTriangleApplication.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
