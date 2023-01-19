@@ -20,12 +20,13 @@ const bool enableValidationLayers = true;
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
 	/// <summary>
 	/// Checks if all members of the struct are initialized
 	/// </summary>
 	/// <returns></returns>
 	bool isComplete() {
-		return graphicsFamily.has_value();
+		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
 };
 
@@ -37,7 +38,7 @@ public:
    
 
 private:
-    /// static functions
+    // static functions
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -48,20 +49,28 @@ private:
 
 	static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 
+    // setup
     void initVulkan();
 
     void initWindow();
 
     void createLogicalDevice();
 
-    void cleanup();
+    void createInstance();
+
+    void createSurface();
 
     void pickPhysicalDevice();
 
+    void setupAppInfo(VkApplicationInfo& appInfo);
+
+    void setupDebugMessenger();
+
+    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
     void mainLoop();
 
-    void createInstance();
-
+    // utility
     bool checkGLFWLayersSupport();
 
     std::vector<const char*> getRequiredExtensions();
@@ -71,24 +80,20 @@ private:
     template <class Info, class Value, class FReturnType>
     std::vector<Value> getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*));
 
-    void setupAppInfo(VkApplicationInfo& appInfo);
-
-    void setupDebugMessenger();
-
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
     bool isDeviceSuitable(VkPhysicalDevice device);
 
-   
+    void cleanup();
 
+    // Member variables
     GLFWwindow* window;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkPhysicalDevice physicalDevice;
     VkDevice device;
     VkQueue graphicsQueue;
+    VkSurfaceKHR surface;
 };
 
 template <class Info, class Value, class FReturnType>

@@ -92,6 +92,14 @@ void HelloTriangleApplication::createInstance()
 
 }
 
+void HelloTriangleApplication::createSurface()
+{
+	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create window surface!");
+	}
+
+}
+
 bool HelloTriangleApplication::checkGLFWLayersSupport()
 {
     uint32_t glfwExtensionCount = 0;
@@ -132,7 +140,7 @@ std::vector<const char*> HelloTriangleApplication::getRequiredExtensions()
 
 void HelloTriangleApplication::pickPhysicalDevice()
 {
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    physicalDevice = VK_NULL_HANDLE;
     std::vector<VkPhysicalDevice> physicalDevices = getFilledVector<VkInstance,VkPhysicalDevice,VkResult>(instance, &vkEnumeratePhysicalDevices);
 	if (physicalDevices.empty()) {
 		throw std::runtime_error("failed to find GPUs with Vulkan support!");
@@ -162,17 +170,6 @@ void HelloTriangleApplication::setupAppInfo(VkApplicationInfo& appInfo)
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
-}
-
-void HelloTriangleApplication::cleanup()
-{
-    if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-    }
-    vkDestroyInstance(instance, nullptr);
-    vkDestroyDevice(device,nullptr);
-    glfwDestroyWindow(window);
-    glfwTerminate();
 }
 
 void HelloTriangleApplication::initWindow()
@@ -279,9 +276,15 @@ QueueFamilyIndices HelloTriangleApplication::findQueueFamilies(VkPhysicalDevice 
 	QueueFamilyIndices indices;
     std::vector<VkQueueFamilyProperties> queueFamilies = getFilledVector(device, &vkGetPhysicalDeviceQueueFamilyProperties);
 	int i = 0;
+ 
 	for (const auto& queueFamily : queueFamilies) {
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			indices.graphicsFamily = i;
+		}
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+		if (presentSupport) {
+			indices.presentFamily = i;
 		}
         if (indices.isComplete()) break;
 		i++;
@@ -302,4 +305,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL HelloTriangleApplication::debugCallback(VkDebugUt
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
+}
+
+void HelloTriangleApplication::cleanup()
+{
+    if (enableValidationLayers) {
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+    }
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
+    vkDestroyDevice(device,nullptr);
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }
