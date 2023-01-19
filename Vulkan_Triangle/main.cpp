@@ -3,7 +3,7 @@
 
 
 int main() {
-    HelloTriangleApplication app;
+    TriangleApp::HelloTriangleApplication app;
 
     try {
         app.run();

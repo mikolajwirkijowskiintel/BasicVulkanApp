@@ -5,103 +5,119 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 640;
-const std::vector<const char*> validationLayers = {
-    "VK_LAYER_KHRONOS_validation"
-};
-
+namespace TriangleApp {
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+    const bool enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+    const bool enableValidationLayers = true;
 #endif
- 
+    const uint32_t WIDTH = 800;
+    const uint32_t HEIGHT = 640;
 
-struct QueueFamilyIndices {
-	std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-	/// <summary>
-	/// Checks if all members of the struct are initialized
-	/// </summary>
-	/// <returns></returns>
-	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value();
-	}
-};
+    const std::vector<const char*> validationLayers = {
+        "VK_LAYER_KHRONOS_validation"
+    };
 
-class HelloTriangleApplication {
-public:
+    const std::vector<const char*> deviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
 
-    void run();
+    struct SwapChainSupportDetails {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
 
-   
+    struct QueueFamilyIndices {
+        std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
+        /// <summary>
+        /// Checks if all members of the struct are initialized
+        /// </summary>
+        /// <returns></returns>
+        bool isComplete() {
+            return graphicsFamily.has_value() && presentFamily.has_value();
+        }
+    };
 
-private:
-    // static functions
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData);
+    class HelloTriangleApplication {
+    public:
 
-	static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+        void run();
 
-	static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 
-    // setup
-    void initVulkan();
 
-    void initWindow();
+    private:
+        // static functions
+        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+            void* pUserData);
 
-    void createLogicalDevice();
+        static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
-    void createInstance();
+        static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 
-    void createSurface();
+        // setup
+        void initVulkan();
 
-    void pickPhysicalDevice();
+        void initWindow();
 
-    void setupAppInfo(VkApplicationInfo& appInfo);
+        void createLogicalDevice();
 
-    void setupDebugMessenger();
+        void createInstance();
 
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+        void createSurface();
 
-    void mainLoop();
+        void pickPhysicalDevice();
 
-    // utility
-    bool checkGLFWLayersSupport();
+        void setupAppInfo(VkApplicationInfo& appInfo);
 
-    std::vector<const char*> getRequiredExtensions();
+        void setupDebugMessenger();
 
-    bool checkValidationLayerSupport();
+        void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+        void mainLoop();
+
+        // utility
+        SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
+        bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
+        bool checkGLFWLayersSupport();
+
+        std::vector<const char*> getRequiredExtensions();
+
+        bool checkValidationLayerSupport();
+
+        template <class Info, class Value, class FReturnType>
+        std::vector<Value> getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*));
+
+        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+        bool isDeviceSuitable(VkPhysicalDevice device);
+
+        void cleanup();
+
+        // Member variables
+        GLFWwindow* window;
+        VkInstance instance;
+        VkDebugUtilsMessengerEXT debugMessenger;
+        VkPhysicalDevice physicalDevice;
+        VkDevice device;
+        VkQueue graphicsQueue;
+        VkSurfaceKHR surface;
+        VkQueue presentQueue;
+    };
 
     template <class Info, class Value, class FReturnType>
-    std::vector<Value> getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*));
-
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-
-    bool isDeviceSuitable(VkPhysicalDevice device);
-
-    void cleanup();
-
-    // Member variables
-    GLFWwindow* window;
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
-    VkPhysicalDevice physicalDevice;
-    VkDevice device;
-    VkQueue graphicsQueue;
-    VkSurfaceKHR surface;
-};
-
-template <class Info, class Value, class FReturnType>
-std::vector<Value> HelloTriangleApplication::getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*))
-{
-    uint32_t count = 0;
-    func(info, &count, nullptr);
-    std::vector<Value> resultVector(count);
-    func(info, &count, resultVector.data());
-    return resultVector;
+    std::vector<Value> HelloTriangleApplication::getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*))
+    {
+        uint32_t count = 0;
+        func(info, &count, nullptr);
+        std::vector<Value> resultVector(count);
+        func(info, &count, resultVector.data());
+        return resultVector;
+    }
 }
