@@ -2,6 +2,7 @@
 #include <vector>
 #include <optional>
 #include <functional>
+#include <string>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -49,6 +50,9 @@ namespace TriangleApp {
 
     private:
         // static functions
+
+        static std::vector<char> readFile(const std::string& filename);
+
         static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
             VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -89,6 +93,8 @@ namespace TriangleApp {
         void mainLoop();
 
         // utility
+
+        VkShaderModule createShaderModule(const std::vector<char>& code);
 
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
         

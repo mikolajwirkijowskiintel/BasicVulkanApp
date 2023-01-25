@@ -6,6 +6,9 @@
 #include <set>
 #include <limits>
 #include <algorithm>
+#include <fstream>
+
+
 namespace TriangleApp
 {
 	
@@ -26,6 +29,19 @@ namespace TriangleApp
 		
 	}
 	
+	VkShaderModule HelloTriangleApplication::createShaderModule(const std::vector<char>& code)
+	{
+		VkShaderModuleCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		createInfo.codeSize = code.size();
+		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+		VkShaderModule shaderModule;
+		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create shader module!");
+		}
+		return shaderModule;
+	}
+
 	VkExtent2D HelloTriangleApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) return capabilities.currentExtent;
@@ -126,6 +142,22 @@ namespace TriangleApp
 		createGraphicsPipeline();
 	}
 	
+	void HelloTriangleApplication::createGraphicsPipeline()
+	{
+		auto vertShader = readFile("/shaders/vert.spv");
+		
+		auto fragShader = readFile("/shaders/frag.spv");
+
+		VkShaderModule vertShaderModule = createShaderModule(vertShader);
+		VkShaderModule fragShaderModule = createShaderModule(fragShader);
+
+
+
+		// end function cleanup resources
+		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	}
+
 	void HelloTriangleApplication::createInstance()
 	{
 	    if (enableValidationLayers && !checkValidationLayerSupport()) {
@@ -407,6 +439,24 @@ namespace TriangleApp
 	}
 	
 	
+	std::vector<char> HelloTriangleApplication::readFile(const std::string& filename)
+	{
+		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+		if (!file.is_open()) {
+			throw std::runtime_error("failed to open file!");
+		}
+		size_t fileSize = (size_t)file.tellg();
+		std::vector<char> buffer(fileSize);
+
+		file.seekg(0);
+		file.read(buffer.data(), fileSize);
+
+		file.close();
+
+		return buffer;
+	}
+
 	VKAPI_ATTR VkBool32 VKAPI_CALL HelloTriangleApplication::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
 	    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
@@ -511,11 +561,6 @@ namespace TriangleApp
 	    vkDestroyDevice(device,nullptr);
 	    glfwDestroyWindow(window);
 	    glfwTerminate();
-	}
-
-	void HelloTriangleApplication::createGraphicsPipeline()
-	{
-		throw std::logic_error("The method or operation is not implemented.");
 	}
 
 }
