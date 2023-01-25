@@ -434,7 +434,7 @@ namespace TriangleApp
 		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
 		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 		
-		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; // the 1 just prevents the pipeline from being blocked while waiting ig
 		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
 			imageCount = swapChainSupport.capabilities.maxImageCount;
 		}
@@ -470,6 +470,14 @@ namespace TriangleApp
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 		
 		vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain);
+
+		
+		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+		swapChainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+		
+		swapChainImageFormat = surfaceFormat.format;
+		swapChainExtent = extent;
 	}
 
 }

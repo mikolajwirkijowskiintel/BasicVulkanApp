@@ -110,15 +110,26 @@ namespace TriangleApp {
         void cleanup();
 
         // Member variables
-        GLFWwindow* window;
+        
+        // Vulkan base
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
+        
+        // Devices
         VkPhysicalDevice physicalDevice;
         VkDevice device;
-        VkQueue graphicsQueue;
+        
+        // Draw
+        GLFWwindow* window;
         VkSurfaceKHR surface;
+        VkQueue graphicsQueue;
         VkQueue presentQueue;
+        
+		// Swap chain variables
         VkSwapchainKHR swapChain;
+		std::vector<VkImage> swapChainImages;
+		VkFormat swapChainImageFormat;
+		VkExtent2D swapChainExtent;
     };
 
     template <class Info, class Value, class FReturnType>
