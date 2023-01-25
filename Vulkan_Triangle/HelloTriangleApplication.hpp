@@ -6,6 +6,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define ALPHA_BLEND
+
 namespace TriangleApp {
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
