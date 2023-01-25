@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <set>
+#include <limits>
+#include <algorithm>
 namespace TriangleApp
 {
 	
@@ -21,8 +23,36 @@ namespace TriangleApp
 	    while (!glfwWindowShouldClose(window)) {
 	        glfwPollEvents();
 	    }
+		
 	}
 	
+	VkExtent2D HelloTriangleApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+	{
+		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) return capabilities.currentExtent;
+		else {
+			int width, height;
+			glfwGetFramebufferSize(window, &width, &height);
+			VkExtent2D actualExtent = {
+				static_cast<uint32_t>(width),
+				static_cast<uint32_t>(height)
+			};
+			actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+			actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+			return actualExtent;
+		}
+	}
+
+	VkSurfaceFormatKHR HelloTriangleApplication::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+	{
+		for (const auto& availableFormat : availableFormats) {
+			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+				return availableFormat;
+			}
+		}
+		
+		return availableFormats[0];
+	}
+
 	SwapChainSupportDetails HelloTriangleApplication::querySwapChainSupport(VkPhysicalDevice device)
 	{
 		SwapChainSupportDetails details;
@@ -87,10 +117,11 @@ namespace TriangleApp
 	void HelloTriangleApplication::initVulkan()
 	{
 	    createInstance();
-		createSurface();
 	    setupDebugMessenger();
+		createSurface();
 	    pickPhysicalDevice();
 	    createLogicalDevice();
+		createSwapChain();
 		
 	
 	}
@@ -199,7 +230,7 @@ namespace TriangleApp
 	
 	    glfwExtensions = getRequiredExtensions();
 	
-	    std::vector<VkExtensionProperties> extensions = getFilledVector(static_cast<const char*>(nullptr), vkEnumerateInstanceExtensionProperties);
+	    std::vector<VkExtensionProperties> extensions = fillVectorFromFunction(static_cast<const char*>(nullptr), vkEnumerateInstanceExtensionProperties);
 	
 	    for (int i = 0; i < glfwExtensionCount; i++) {
 	        bool matched = false;
@@ -233,7 +264,7 @@ namespace TriangleApp
 	void HelloTriangleApplication::pickPhysicalDevice()
 	{
 	    physicalDevice = VK_NULL_HANDLE;
-	    std::vector<VkPhysicalDevice> physicalDevices = getFilledVector<VkInstance,VkPhysicalDevice,VkResult>(instance, &vkEnumeratePhysicalDevices);
+	    std::vector<VkPhysicalDevice> physicalDevices = fillVectorFromFunction<VkInstance,VkPhysicalDevice,VkResult>(instance, &vkEnumeratePhysicalDevices);
 		if (physicalDevices.empty()) {
 			throw std::runtime_error("failed to find GPUs with Vulkan support!");
 		}
@@ -328,10 +359,22 @@ namespace TriangleApp
 	    createInfo.pfnUserCallback = debugCallback;
 	}
 	
+	VkPresentModeKHR HelloTriangleApplication::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+	{
+		for (const auto& availablePresentMode : availablePresentModes) {
+			{
+				if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+					return availablePresentMode;
+				}
+			}
+			return VK_PRESENT_MODE_FIFO_KHR;
+		}
+	}
+
 	QueueFamilyIndices HelloTriangleApplication::findQueueFamilies(VkPhysicalDevice device)
 	{
 		QueueFamilyIndices indices;
-	    std::vector<VkQueueFamilyProperties> queueFamilies = getFilledVector(device, &vkGetPhysicalDeviceQueueFamilyProperties);
+	    std::vector<VkQueueFamilyProperties> queueFamilies = fillVectorFromFunction(device, &vkGetPhysicalDeviceQueueFamilyProperties);
 		int i = 0;
 	 
 		for (const auto& queueFamily : queueFamilies) {
@@ -359,6 +402,7 @@ namespace TriangleApp
 			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
+		// return true if queue families are found, extensions are supported and swapchain is adequate
 		return indices.isComplete() && extensionsSupported && swapChainAdequate;
 	}
 	
@@ -381,4 +425,51 @@ namespace TriangleApp
 	    glfwDestroyWindow(window);
 	    glfwTerminate();
 	}
+
+	void HelloTriangleApplication::createSwapChain()
+	{
+		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+		
+		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+		
+		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+			imageCount = swapChainSupport.capabilities.maxImageCount;
+		}
+		
+		VkSwapchainCreateInfoKHR createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		createInfo.surface = surface;
+		createInfo.minImageCount = imageCount;
+		createInfo.imageFormat = surfaceFormat.format;
+		createInfo.imageColorSpace = surfaceFormat.colorSpace;
+		createInfo.imageExtent = extent;
+		createInfo.imageArrayLayers = 1;
+		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		
+		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		
+		// If we have set up different queues for graphics and presentation, we need to set up a queue family ownership transfer
+		if (indices.graphicsFamily != indices.presentFamily) {
+			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+			createInfo.queueFamilyIndexCount = 2; // number of queue families
+			createInfo.pQueueFamilyIndices = queueFamilyIndices;
+		}
+		else {
+			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			createInfo.queueFamilyIndexCount = 0; // pretty odd if you ask me
+			createInfo.pQueueFamilyIndices = nullptr;
+		}
+		createInfo.preTransform = swapChainSupport.capabilities.currentTransform; 
+		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		createInfo.presentMode = presentMode;
+		createInfo.clipped = VK_TRUE;
+		createInfo.oldSwapchain = VK_NULL_HANDLE;
+		
+		vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain);
+	}
+
 }

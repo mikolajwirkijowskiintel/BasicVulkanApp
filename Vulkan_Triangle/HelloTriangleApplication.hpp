@@ -64,6 +64,8 @@ namespace TriangleApp {
 
         void initWindow();
 
+        void createSwapChain();
+        
         void createLogicalDevice();
 
         void createInstance();
@@ -77,10 +79,17 @@ namespace TriangleApp {
         void setupDebugMessenger();
 
         void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+        
+		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
         void mainLoop();
 
         // utility
+
+		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+        
+		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+        
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
@@ -92,7 +101,7 @@ namespace TriangleApp {
         bool checkValidationLayerSupport();
 
         template <class Info, class Value, class FReturnType>
-        std::vector<Value> getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*));
+        std::vector<Value> fillVectorFromFunction(Info info, FReturnType(*func)(Info, uint32_t*, Value*));
 
         QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
@@ -109,10 +118,11 @@ namespace TriangleApp {
         VkQueue graphicsQueue;
         VkSurfaceKHR surface;
         VkQueue presentQueue;
+        VkSwapchainKHR swapChain;
     };
 
     template <class Info, class Value, class FReturnType>
-    std::vector<Value> HelloTriangleApplication::getFilledVector(Info info, FReturnType(*func)(Info, uint32_t*, Value*))
+    std::vector<Value> HelloTriangleApplication::fillVectorFromFunction(Info info, FReturnType(*func)(Info, uint32_t*, Value*))
     {
         uint32_t count = 0;
         func(info, &count, nullptr);
