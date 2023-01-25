@@ -66,6 +66,8 @@ namespace TriangleApp {
 
         void createSwapChain();
         
+        void createImageViews();
+        
         void createLogicalDevice();
 
         void createInstance();
@@ -126,6 +128,7 @@ namespace TriangleApp {
         VkQueue presentQueue;
         
 		// Swap chain variables
+        std::vector<VkImageView> swapChainImageViews;
         VkSwapchainKHR swapChain;
 		std::vector<VkImage> swapChainImages;
 		VkFormat swapChainImageFormat;
