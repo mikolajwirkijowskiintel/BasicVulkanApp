@@ -123,7 +123,7 @@ namespace TriangleApp
 	    createLogicalDevice();
 		createSwapChain();
 		createImageViews();
-	
+		createGraphicsPipeline();
 	}
 	
 	void HelloTriangleApplication::createInstance()
@@ -511,6 +511,11 @@ namespace TriangleApp
 	    vkDestroyDevice(device,nullptr);
 	    glfwDestroyWindow(window);
 	    glfwTerminate();
+	}
+
+	void HelloTriangleApplication::createGraphicsPipeline()
+	{
+		throw std::logic_error("The method or operation is not implemented.");
 	}
 
 }

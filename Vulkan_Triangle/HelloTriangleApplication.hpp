@@ -64,6 +64,8 @@ namespace TriangleApp {
 
         void initWindow();
 
+        void createGraphicsPipeline();
+
         void createSwapChain();
         
         void createImageViews();
