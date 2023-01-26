@@ -24,9 +24,15 @@
     <ClCompile Include="HelloTriangleApplication.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vulkanConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HelloTriangleApplication.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkanConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

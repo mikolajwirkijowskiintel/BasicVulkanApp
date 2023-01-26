@@ -7,7 +7,7 @@
 #include <limits>
 #include <algorithm>
 #include <fstream>
-
+#include "vulkanConfig.h"
 
 namespace TriangleApp
 {
@@ -18,7 +18,6 @@ namespace TriangleApp
 	    initVulkan();
 	    mainLoop();
 	    cleanup();
-	    checkValidationLayerSupport();
 	}
 	
 	void HelloTriangleApplication::mainLoop()
@@ -42,19 +41,6 @@ namespace TriangleApp
 		createGraphicsPipeline();
 	}
 	
-	VkShaderModule HelloTriangleApplication::createShaderModule(const std::vector<char>& code)
-	{
-		VkShaderModuleCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.codeSize = code.size();
-		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create shader module!");
-		}
-		return shaderModule;
-	}
-
 	VkExtent2D HelloTriangleApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) return capabilities.currentExtent;
@@ -143,6 +129,18 @@ namespace TriangleApp
 	
 	}
 	
+	VkShaderModule HelloTriangleApplication::createShaderModule(const std::vector<char>& code)
+	{
+		VkShaderModuleCreateInfo createInfo{};
+		vulkanConfig::configShaderModuleCreateInfo(&createInfo, code);
+
+		VkShaderModule shaderModule;
+		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create shader module!");
+		}
+		return shaderModule;
+	}
+
 	void HelloTriangleApplication::createRenderPass()
 	{
 		VkAttachmentDescription colorAttachment{};
@@ -737,21 +735,30 @@ namespace TriangleApp
 
 	void HelloTriangleApplication::cleanup()
 	{
+
+		vkDestroyPipeline(device, graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 		vkDestroyRenderPass(device, renderPass, nullptr);
-		vkDestroyPipeline(device, graphicsPipeline, nullptr);
-
-	    if (enableValidationLayers) {
-	        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-	    }
+		
 		for (auto imageView : swapChainImageViews) {
 			vkDestroyImageView(device, imageView, nullptr);
 		}
+		
+		vkDestroySwapchainKHR(device, swapChain, nullptr);
+	    vkDestroyDevice(device,nullptr);
+	    
+		if (enableValidationLayers) {
+	        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+	    }
+		
 	    vkDestroySurfaceKHR(instance, surface, nullptr);
 	    vkDestroyInstance(instance, nullptr);
-	    vkDestroyDevice(device,nullptr);
-	    glfwDestroyWindow(window);
-	    glfwTerminate();
-	}
+	    
+		glfwDestroyWindow(window);
+		glfwTerminate();
 
+		return;
+	}
 }
+
+
