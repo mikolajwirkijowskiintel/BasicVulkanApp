@@ -76,6 +76,7 @@ namespace TriangleApp {
         
         void createImageViews();
         
+        void createRenderPass();
         void createLogicalDevice();
 
         void createInstance();
@@ -122,8 +123,13 @@ namespace TriangleApp {
         void cleanup();
 
         // Member variables
-        
-        // Vulkan base
+
+        // Graphics pipeline variables
+        VkRenderPass renderPass;
+        VkPipelineLayout pipelineLayout;
+        VkPipeline graphicsPipeline;
+
+        // Vulkan base variables
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
         
