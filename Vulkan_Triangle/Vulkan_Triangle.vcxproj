@@ -136,13 +136,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="HelloTriangleApplication.cpp" />
+    <ClCompile Include="LogicalDevice.cpp" />
+    <ClCompile Include="RenderEngine.cpp" />
+    <None Include="HelloTriangleApplication.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="vulkanConfig.cpp" />
+    <ClCompile Include="PhysicalDeviceManager.cpp" />
+    <ClCompile Include="RenderingPipeline.cpp" />
+    <ClCompile Include="VulkanInstance.cpp" />
+    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HelloTriangleApplication.hpp" />
-    <ClInclude Include="vulkanConfig.h" />
+    <ClInclude Include="LogicalDevice.h" />
+    <ClInclude Include="RenderEngine.h" />
+    <None Include="HelloTriangleApplication.hpp" />
+    <ClInclude Include="PhysicalDeviceManager.h" />
+    <ClInclude Include="RenderingPipeline.h" />
+    <ClInclude Include="VulkanInstance.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\frag.spv" />

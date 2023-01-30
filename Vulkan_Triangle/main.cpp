@@ -1,17 +1,13 @@
-#include "HelloTriangleApplication.hpp"
+#include "RenderEngine.h"
 #include <iostream>
-
+#include <cstdlib>
 
 int main() {
-    TriangleApp::HelloTriangleApplication app;
+    
+	RenderEngine* app = new RenderEngine();
+	app->run();
 
-    try {
-        app.run();
-    }
-    catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
+	delete app;
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }

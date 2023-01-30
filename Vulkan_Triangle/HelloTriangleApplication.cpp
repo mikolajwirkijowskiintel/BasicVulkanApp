@@ -7,7 +7,6 @@
 #include <limits>
 #include <algorithm>
 #include <fstream>
-#include "vulkanConfig.h"
 
 namespace TriangleApp
 {
@@ -34,6 +33,7 @@ namespace TriangleApp
 	    setupDebugMessenger();
 		createSurface();
 	    pickPhysicalDevice();
+
 	    createLogicalDevice();
 		createSwapChain();
 		createImageViews();
@@ -129,7 +129,9 @@ namespace TriangleApp
 	VkShaderModule HelloTriangleApplication::createShaderModule(const std::vector<char>& code)
 	{
 		VkShaderModuleCreateInfo createInfo{};
-		vulkanConfig::configShaderModuleCreateInfo(&createInfo, code);
+		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		createInfo.codeSize = code.size();
+		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 		VkShaderModule shaderModule;
 		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
@@ -641,23 +643,7 @@ namespace TriangleApp
 
 	QueueFamilyIndices HelloTriangleApplication::findQueueFamilies(VkPhysicalDevice device)
 	{
-		QueueFamilyIndices indices;
-	    std::vector<VkQueueFamilyProperties> queueFamilies = fillVectorFromFunction(device, &vkGetPhysicalDeviceQueueFamilyProperties);
-		int i = 0;
-	 
-		for (const auto& queueFamily : queueFamilies) {
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-				indices.graphicsFamily = i;
-			}
-			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-			if (presentSupport) {
-				indices.presentFamily = i;
-			}
-	        if (indices.isComplete()) break;
-			i++;
-		}
-		return indices;
+		
 	}
 	
 	bool HelloTriangleApplication::isDeviceSuitable(VkPhysicalDevice device)
