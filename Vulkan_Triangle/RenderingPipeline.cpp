@@ -1,6 +1,10 @@
 #include "RenderingPipeline.h"
 #include <stdexcept>
 #include <fstream>
+#include <chrono>
+#include <iostream>
+#include "ScopeTimer.h"
+
 RenderingPipeline::RenderingPipeline(LogicalDevice* logicalDevice):logicalDevice(logicalDevice)
 {
 	// TODO FIX THIS UGLY CHAIN
@@ -50,11 +54,14 @@ void RenderingPipeline::createRenderPass()
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 
+
+	// TODO check if needed
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	dependency.dstSubpass = 0;
 	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstStageMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 
 	VkRenderPassCreateInfo renderPassInfo{};
@@ -370,15 +377,17 @@ void RenderingPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 
 void RenderingPipeline::drawFrame()
 {
-	
 	VkDevice logDevice = logicalDevice->getLogicalDevice();
 
 	auto inFlightFences = logicalDevice->getInFlightFence();
 	auto imageAvailableSemaphores = logicalDevice->getImageAvailableSemaphore();
 	auto renderFinishedSemaphores = logicalDevice->getRenderFinishedSemaphore();
+	
 
 	vkWaitForFences(logDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
+	
+	
 	uint32_t imageIndex;
 	VkResult acquireNextImageResult = vkAcquireNextImageKHR(logDevice, logicalDevice->getSwapChain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 	
@@ -389,11 +398,11 @@ void RenderingPipeline::drawFrame()
 		swapChainInvalidateReplace();
 		return;
 	}
-	else if (!acquireNextImageSuccesful) {
+	if (!acquireNextImageSuccesful) {
 		throw std::runtime_error("failed to acquire swap chain image");
 	}
 	vkResetFences(logDevice, 1, &inFlightFences[currentFrame]);
-
+	
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
@@ -426,8 +435,10 @@ void RenderingPipeline::drawFrame()
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
-
+	
 	VkResult queuePresentResult = vkQueuePresentKHR(logicalDevice->getPresentationQueue(), &presentInfo);
+
+	
 
 	swapChainOutOfDate = queuePresentResult == VK_ERROR_OUT_OF_DATE_KHR || queuePresentResult == VK_SUBOPTIMAL_KHR;
 	acquireNextImageSuccesful = queuePresentResult == VK_SUCCESS;

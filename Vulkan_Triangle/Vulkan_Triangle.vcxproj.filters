@@ -39,6 +39,9 @@
     <ClCompile Include="RenderingPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ScopeTimer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RenderEngine.h">
@@ -65,6 +68,9 @@
     <ClInclude Include="triangle_vertices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ScopeTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\shader_compile.bat">
@@ -81,12 +87,6 @@
     </None>
     <None Include="shaders\vert.spv">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="HelloTriangleApplication.cpp">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="HelloTriangleApplication.hpp">
-      <Filter>Header Files</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -138,19 +138,19 @@
   <ItemGroup>
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="RenderEngine.cpp" />
-    <None Include="HelloTriangleApplication.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PhysicalDeviceManager.cpp" />
     <ClCompile Include="RenderingPipeline.cpp" />
+    <ClCompile Include="ScopeTimer.cpp" />
     <ClCompile Include="VulkanInstance.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="RenderEngine.h" />
-    <None Include="HelloTriangleApplication.hpp" />
     <ClInclude Include="PhysicalDeviceManager.h" />
     <ClInclude Include="RenderingPipeline.h" />
+    <ClInclude Include="ScopeTimer.h" />
     <ClInclude Include="triangle_vertices.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VulkanInstance.h" />

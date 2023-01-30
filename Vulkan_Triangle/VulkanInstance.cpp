@@ -53,6 +53,7 @@ void VulkanInstance::createInstance()
 
 void VulkanInstance::createDebugMessenger()
 {
+    if (!enableValidationLayers) return;
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
     populateDebugMessengerCreateInfo(debugCreateInfo);
 	if (CreateDebugUtilsMessengerEXT(

@@ -1,4 +1,14 @@
 #include "RenderEngine.h"
+#include "ScopeTimer.h"
+#include <thread>
+
+bool shouldClose = false;
+
+void renderingThreadFunction(RenderingPipeline* renderPipeline) {
+	while (!shouldClose) {
+		renderPipeline->drawFrame();
+	}
+}
 
 RenderEngine::RenderEngine()
 {
@@ -9,7 +19,6 @@ RenderEngine::RenderEngine()
 	renderingPipeline = nullptr;
 
 }
-
 
 void RenderEngine::run()
 {
@@ -24,10 +33,14 @@ void RenderEngine::run()
 
 void RenderEngine::mainLoop()
 {
-	while (!glfwWindowShouldClose(window->getWindow())) {
+	auto glfwWindow = window->getWindow();
+	std::thread renderingThread(renderingThreadFunction, renderingPipeline);
+
+	while(!shouldClose) {
 		glfwPollEvents();
-		renderingPipeline->drawFrame();
+		shouldClose = glfwWindowShouldClose(glfwWindow);
 	}
+	renderingThread.join();
 	vkDeviceWaitIdle(logicalDevice->getLogicalDevice());
 }
 
