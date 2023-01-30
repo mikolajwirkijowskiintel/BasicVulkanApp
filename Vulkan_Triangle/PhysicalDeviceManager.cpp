@@ -88,6 +88,24 @@ SwapChainSupportDetails PhysicalDeviceManager::querySwapchainSupportDetails(VkPh
 
 }
 
+uint32_t PhysicalDeviceManager::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, VkPhysicalDevice physicalDevice)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		bool memoryTypeCorrect = typeFilter & (1 << i);
+		bool memorySupportsProperties = (memProperties.memoryTypes[i].propertyFlags & properties) == properties;
+		
+		if (memoryTypeCorrect && memorySupportsProperties) {
+			return i;
+		}
+
+	}
+
+	throw std::runtime_error("failed to find suitable memory type!");
+
+}
+
 bool PhysicalDeviceManager::bDeviceSupportsBasicSwapchain(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details = querySwapchainSupportDetails(device);

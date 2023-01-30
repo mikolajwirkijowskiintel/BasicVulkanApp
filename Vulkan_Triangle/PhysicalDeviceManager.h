@@ -16,8 +16,6 @@ struct SwapChainSupportDetails {
 	std::vector<VkPresentModeKHR> presentModes;
 };
 
-
-
 class PhysicalDeviceManager
 {
 public:
@@ -27,9 +25,12 @@ public:
 	SwapChainSupportDetails querySwapchainSupportDetails(VkPhysicalDevice device);
 	const std::vector<const char*> getDeviceRequiredExtensions() { return deviceRequiredExtensions; }
 
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, VkPhysicalDevice physicalDevice);
+
 	VulkanInstance* getVulkanInstance() { return instance; }
 
 private:
+	
 	bool bDeviceMeetsAllRequirements(VkPhysicalDevice device);
 	bool bDeviceSupportsRequiredExtensions(VkPhysicalDevice device);
 	bool bDeviceSupportsBasicSwapchain(VkPhysicalDevice device);

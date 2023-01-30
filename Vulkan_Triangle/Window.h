@@ -14,6 +14,7 @@ public:
 	// getters
 	GLFWwindow* getWindow() const { return window; }
 	std::vector<const char*>* getVulkanExtensionsRequiredByWindow();
+	
 
 private:
 	GLFWwindow* window;

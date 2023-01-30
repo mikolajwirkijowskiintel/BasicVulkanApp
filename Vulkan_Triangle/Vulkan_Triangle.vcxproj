@@ -151,6 +151,8 @@
     <None Include="HelloTriangleApplication.hpp" />
     <ClInclude Include="PhysicalDeviceManager.h" />
     <ClInclude Include="RenderingPipeline.h" />
+    <ClInclude Include="triangle_vertices.h" />
+    <ClInclude Include="Vertex.h" />
     <ClInclude Include="VulkanInstance.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>

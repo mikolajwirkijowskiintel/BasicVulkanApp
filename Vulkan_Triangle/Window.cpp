@@ -4,7 +4,6 @@ Window::Window():WIDTH(800),HEIGHT(640)
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	window = glfwCreateWindow(WIDTH, HEIGHT, "AMAZING TRIANGLE", nullptr, nullptr);
 
 
@@ -24,3 +23,4 @@ std::vector<const char*>* Window::getVulkanExtensionsRequiredByWindow()
 {
 	return extensions;
 }
+

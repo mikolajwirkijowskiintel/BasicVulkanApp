@@ -11,6 +11,7 @@ public:
 	RenderEngine();
 	~RenderEngine();
 	void run();
+	
 private:
 	void mainLoop();
 

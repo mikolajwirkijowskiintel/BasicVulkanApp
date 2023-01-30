@@ -194,6 +194,14 @@ void LogicalDevice::createSyncObjects()
 
 }
 
+void LogicalDevice::cleanupSwapChain()
+{
+	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+		vkDestroyImageView(logicalDevice, swapChainImageViews[i], nullptr);
+	}
+	vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+}
+
 VkSurfaceFormatKHR LogicalDevice::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
 	for (const auto& availableFormat : availableFormats) {
@@ -232,5 +240,13 @@ VkExtent2D LogicalDevice::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capab
 		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 		return actualExtent;
 	}
+}
+
+void LogicalDevice::onRenderingPipelineSwapChainInvalidateReplace()
+{
+	cleanupSwapChain();
+	createSwapchain();
+	createImageViews();
+
 }
 

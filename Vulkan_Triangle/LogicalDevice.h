@@ -24,6 +24,7 @@ public:
 	VkSwapchainKHR getSwapChain() const { return swapChain; }
 	VkQueue getGraphicsQueue() const { return graphicsQueue; }
 	VkQueue getPresentationQueue() const { return presentationQueue; }
+	void onRenderingPipelineSwapChainInvalidateReplace(); // Somehow avoid having that public?
 	
 	static const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -33,6 +34,7 @@ private:
 	void createSwapchain();
 	void createImageViews();
 	void createSyncObjects();
+	void cleanupSwapChain();
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentationMode(const std::vector<VkPresentModeKHR>& availableFormats);
@@ -41,6 +43,8 @@ private:
 	// Core variables
 	PhysicalDeviceManager* physicalDeviceManager;
 	VkPhysicalDevice currentPhysicalDevice;
+	
+	
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
 	VkDevice logicalDevice;
@@ -51,7 +55,6 @@ private:
 	std::vector<VkImageView> swapChainImageViews;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
-
 	// Asynchronous synchronization objects
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;

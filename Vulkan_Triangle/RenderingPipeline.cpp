@@ -3,11 +3,18 @@
 #include <fstream>
 RenderingPipeline::RenderingPipeline(LogicalDevice* logicalDevice):logicalDevice(logicalDevice)
 {
+	// TODO FIX THIS UGLY CHAIN
+	GLFWwindow* window = logicalDevice->getPhysicalDeviceManager()->getVulkanInstance()->getWindow()->getWindow();
+	glfwSetWindowUserPointer(window, this);
+	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+
+
 	renderPass = {};
 	createRenderPass();
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
+	createVertexBuffer();
 	createCommandBuffers();
 
 }
@@ -15,13 +22,9 @@ RenderingPipeline::RenderingPipeline(LogicalDevice* logicalDevice):logicalDevice
 RenderingPipeline::~RenderingPipeline()
 {
 	VkDevice logDevice = logicalDevice->getLogicalDevice();
-	vkDestroyPipeline(logDevice, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(logDevice, pipelineLayout, nullptr);
-	vkDestroyRenderPass(logDevice, renderPass, nullptr);
-
-	for (auto framebuffer : swapChainFramebuffers) {
-		vkDestroyFramebuffer(logicalDevice->getLogicalDevice(), framebuffer, nullptr);
-	}
+	cleanupSwapchain();
+	vkDestroyBuffer(logDevice, vertexBuffer, nullptr);
+	vkFreeMemory(logDevice, vertexBufferMemory, nullptr);
 	vkDestroyCommandPool(logDevice, commandPool, nullptr);
 }
 
@@ -68,6 +71,7 @@ void RenderingPipeline::createRenderPass()
 
 }
 
+// TODO clean this up
 void RenderingPipeline::createGraphicsPipeline()
 {
 	auto vertShader = readFile("shaders\\vert.spv");
@@ -93,12 +97,15 @@ void RenderingPipeline::createGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// Vertex input stage config
+	auto bindingDescription = Vertex::getBindingDescription();
+	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 
 	// Input assembly config
@@ -268,6 +275,29 @@ void RenderingPipeline::createFramebuffers()
 
 }
 
+void RenderingPipeline::createVertexBuffer()
+{
+	VkDevice logDevice = logicalDevice->getLogicalDevice();
+	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+
+	void* data;
+	vkMapMemory(logDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(logDevice, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+	
+	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+	vkDestroyBuffer(logDevice, stagingBuffer, nullptr);
+	vkFreeMemory(logDevice, stagingBufferMemory, nullptr);
+}
+
 void RenderingPipeline::createCommandPool()
 {
 	PhysicalDeviceManager* physicalDeviceManager = logicalDevice->getPhysicalDeviceManager();
@@ -324,17 +354,23 @@ void RenderingPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+	VkBuffer vertexBuffers[] = { vertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to record command buffer!");
 	}
+
 }
 
 void RenderingPipeline::drawFrame()
 {
-	currentFrame = (currentFrame + 1) % LogicalDevice::MAX_FRAMES_IN_FLIGHT;
+	
 	VkDevice logDevice = logicalDevice->getLogicalDevice();
 
 	auto inFlightFences = logicalDevice->getInFlightFence();
@@ -342,10 +378,22 @@ void RenderingPipeline::drawFrame()
 	auto renderFinishedSemaphores = logicalDevice->getRenderFinishedSemaphore();
 
 	vkWaitForFences(logDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-	vkResetFences(logDevice, 1, &inFlightFences[currentFrame]);
 
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(logDevice, logicalDevice->getSwapChain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult acquireNextImageResult = vkAcquireNextImageKHR(logDevice, logicalDevice->getSwapChain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+	
+	bool swapChainOutOfDate = acquireNextImageResult == VK_ERROR_OUT_OF_DATE_KHR;
+	bool acquireNextImageSuccesful = acquireNextImageResult == VK_SUCCESS || acquireNextImageResult == VK_SUBOPTIMAL_KHR;
+
+	if (swapChainOutOfDate) {
+		swapChainInvalidateReplace();
+		return;
+	}
+	else if (!acquireNextImageSuccesful) {
+		throw std::runtime_error("failed to acquire swap chain image");
+	}
+	vkResetFences(logDevice, 1, &inFlightFences[currentFrame]);
+
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
@@ -378,7 +426,20 @@ void RenderingPipeline::drawFrame()
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
-	vkQueuePresentKHR(logicalDevice->getPresentationQueue(), &presentInfo);
+
+	VkResult queuePresentResult = vkQueuePresentKHR(logicalDevice->getPresentationQueue(), &presentInfo);
+
+	swapChainOutOfDate = queuePresentResult == VK_ERROR_OUT_OF_DATE_KHR || queuePresentResult == VK_SUBOPTIMAL_KHR;
+	acquireNextImageSuccesful = queuePresentResult == VK_SUCCESS;
+
+	if (swapChainOutOfDate || framebufferResized) {
+		framebufferResized = false;
+		swapChainInvalidateReplace();
+	}
+	else if (!acquireNextImageSuccesful) {
+		throw std::runtime_error("failed to present swap chain image");
+	}
+	currentFrame = (currentFrame + 1) % LogicalDevice::MAX_FRAMES_IN_FLIGHT;
 }
 
 VkShaderModule RenderingPipeline::createShaderModule(const std::vector<char>& code)
@@ -412,3 +473,106 @@ std::vector<char> RenderingPipeline::readFile(const std::string& filename)
 
 	return buffer;
 }
+
+void RenderingPipeline::swapChainInvalidateReplace()
+{
+	int width = 0, height = 0;
+	GLFWwindow* window = logicalDevice->getPhysicalDeviceManager()->getVulkanInstance()->getWindow()->getWindow(); // TODO again, maybe make RenderEngine pointers static?
+	glfwGetFramebufferSize(window, &width, &height);
+	while (width == 0 || height == 0) {
+		glfwGetFramebufferSize(window, &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(logicalDevice->getLogicalDevice());
+	cleanupSwapchain();
+	logicalDevice->onRenderingPipelineSwapChainInvalidateReplace(); 
+
+	createRenderPass();
+	createGraphicsPipeline();
+	createFramebuffers();
+}
+
+void RenderingPipeline::cleanupSwapchain()
+{
+	auto logicDevice = logicalDevice->getLogicalDevice();
+
+	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
+		vkDestroyFramebuffer(logicDevice, swapChainFramebuffers[i], nullptr);
+	}
+
+	vkDestroyPipeline(logicDevice, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(logicDevice, pipelineLayout, nullptr);
+	vkDestroyRenderPass(logicDevice, renderPass, nullptr);
+}
+
+void RenderingPipeline::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+	PhysicalDeviceManager* physicalDeviceManager = logicalDevice->getPhysicalDeviceManager();
+	VkPhysicalDevice physicalDevice = logicalDevice->getCurrentPhysicalDevice();
+	VkDevice logDevice = logicalDevice->getLogicalDevice();
+
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateBuffer(logDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create buffer!");
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(logDevice, buffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = physicalDeviceManager->findMemoryType(memRequirements.memoryTypeBits, properties,physicalDevice);
+
+	if (vkAllocateMemory(logDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate buffer memory!");
+	}
+
+	vkBindBufferMemory(logDevice, buffer, bufferMemory, 0);
+}
+
+void RenderingPipeline::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = commandPool;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(logicalDevice->getLogicalDevice(), &allocInfo, &commandBuffer);
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0; // Optional
+	copyRegion.dstOffset = 0; // Optional
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(logicalDevice->getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(logicalDevice->getGraphicsQueue());
+	vkFreeCommandBuffers(logicalDevice->getLogicalDevice(), commandPool, 1, &commandBuffer);
+
+}
+
+void RenderingPipeline::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+	auto app = reinterpret_cast<RenderingPipeline*>(glfwGetWindowUserPointer(window));
+	app->framebufferResized = true;
+}
+
