@@ -26,7 +26,7 @@ public:
 	VkQueue getPresentationQueue() const { return presentationQueue; }
 	void onRenderingPipelineSwapChainInvalidateReplace(); // Somehow avoid having that public?
 	
-	static const int MAX_FRAMES_IN_FLIGHT = 2;
+	static const int MAX_FRAMES_IN_FLIGHT = 3;
 
 private:
 

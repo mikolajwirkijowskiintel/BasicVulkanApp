@@ -1,6 +1,7 @@
 #pragma once
 #include "LogicalDevice.h"
-#include "triangle_vertices.h"
+#include "Triangle.h"
+#include "GameTickClock.h"
 #include <string>
 
 #define ALPHA_BLEND
@@ -10,11 +11,12 @@ class RenderingPipeline
 public:
 	RenderingPipeline(LogicalDevice* logicalDevice);
 	~RenderingPipeline();
-	void drawFrame();
+	void drawFrame(float delta);
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 private:
 	// initialization
+	void createTriangle();
 	void createRenderPass();
 	void createGraphicsPipeline();
 
@@ -46,7 +48,10 @@ private:
 	
 	std::vector<VkCommandBuffer> commandBuffers;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
-	
+
+	Triangle* triangle;
+	float delta = 0.f;
+
 	VkCommandPool commandPool;
 	bool framebufferResized = false;
 

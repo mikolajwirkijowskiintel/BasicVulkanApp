@@ -33,4 +33,10 @@ struct Vertex {
 	}
 };
 
+struct TransformationPushConstantData {
+	alignas(16)glm::mat2 transform{ 1.f } ;
+	alignas(8)glm::vec2 offset;
+	//alignas(16) glm::vec4 color;
+};
+
 

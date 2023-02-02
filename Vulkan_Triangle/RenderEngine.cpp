@@ -1,12 +1,16 @@
 #include "RenderEngine.h"
 #include "ScopeTimer.h"
 #include <thread>
-
+#include <iostream>
 bool shouldClose = false;
 
 void renderingThreadFunction(RenderingPipeline* renderPipeline) {
+	auto start = std::chrono::high_resolution_clock::now();
 	while (!shouldClose) {
-		renderPipeline->drawFrame();
+		auto end = std::chrono::high_resolution_clock::now();
+		double elapsed = std::chrono::duration<double>(end - start).count();
+		renderPipeline->drawFrame(elapsed);
+		start = end;
 	}
 }
 

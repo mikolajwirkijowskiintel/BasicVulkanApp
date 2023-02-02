@@ -14,6 +14,7 @@ RenderingPipeline::RenderingPipeline(LogicalDevice* logicalDevice):logicalDevice
 
 
 	renderPass = {};
+	createTriangle();
 	createRenderPass();
 	createGraphicsPipeline();
 	createFramebuffers();
@@ -32,6 +33,12 @@ RenderingPipeline::~RenderingPipeline()
 	vkDestroyCommandPool(logDevice, commandPool, nullptr);
 }
 
+
+void RenderingPipeline::createTriangle()
+{
+	triangle = new Triangle(0.3f, glm::vec2{ 0.1f,0.0f });
+
+}
 
 void RenderingPipeline::createRenderPass()
 {
@@ -214,12 +221,18 @@ void RenderingPipeline::createGraphicsPipeline()
 	dynamicState.pDynamicStates = dynamicStates.data();
 
 	//Pipeline Layout
+	VkPushConstantRange pushConstRange{};
+	pushConstRange.offset = 0;
+	pushConstRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushConstRange.size = sizeof(TransformationPushConstantData);
+
+	
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 0; // Optional
 	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = 1; 
+	pipelineLayoutInfo.pPushConstantRanges = &pushConstRange; 
 
 	if (vkCreatePipelineLayout(logicalDevice->getLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
@@ -285,6 +298,7 @@ void RenderingPipeline::createFramebuffers()
 void RenderingPipeline::createVertexBuffer()
 {
 	VkDevice logDevice = logicalDevice->getLogicalDevice();
+	const std::vector<Vertex> vertices = triangle->getVertices();
 	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
 	VkBuffer stagingBuffer;
@@ -339,6 +353,7 @@ void RenderingPipeline::createCommandBuffers()
 
 void RenderingPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
+
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -359,6 +374,7 @@ void RenderingPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 
+	
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
@@ -366,7 +382,14 @@ void RenderingPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+	Transform2dComponent transformData = triangle->getTransform2dAndUpdate(delta);
+	TransformationPushConstantData pushConstantTransformation{};
+	pushConstantTransformation.transform = transformData.mat2();
+	pushConstantTransformation.offset = { 0.0f,0.0f };
+	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(TransformationPushConstantData), &pushConstantTransformation);
+
+
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(triangle->getVertices().size()), 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -375,8 +398,10 @@ void RenderingPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 
 }
 
-void RenderingPipeline::drawFrame()
+void RenderingPipeline::drawFrame(float delta)
 {
+	this->delta = delta;
+
 	VkDevice logDevice = logicalDevice->getLogicalDevice();
 
 	auto inFlightFences = logicalDevice->getInFlightFence();

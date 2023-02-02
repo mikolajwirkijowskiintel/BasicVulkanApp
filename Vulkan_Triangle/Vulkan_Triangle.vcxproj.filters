@@ -42,6 +42,12 @@
     <ClCompile Include="ScopeTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Triangle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTickClock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RenderEngine.h">
@@ -71,22 +77,30 @@
     <ClInclude Include="ScopeTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTickClock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\shader_compile.bat">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="shaders\frag.spv">
+  </ItemGroup>
+  <ItemGroup>
+    <_EmbedManagedResourceFile Include="shaders\vert.spv">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\shader.frag">
+    </_EmbedManagedResourceFile>
+    <_EmbedManagedResourceFile Include="shaders\frag.spv">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\shader.vert">
+    </_EmbedManagedResourceFile>
+    <_EmbedManagedResourceFile Include="shaders\shader.frag">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\vert.spv">
+    </_EmbedManagedResourceFile>
+    <_EmbedManagedResourceFile Include="shaders\shader.vert">
       <Filter>shaders</Filter>
-    </None>
+    </_EmbedManagedResourceFile>
   </ItemGroup>
 </Project>
